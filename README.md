@@ -1,6 +1,7 @@
 # CodeReason
 [![Build Status](https://travis-ci.org/trailofbits/codereason.svg)](https://travis-ci.org/trailofbits/codereason)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/5509/badge.svg)](https://scan.coverity.com/projects/5509)
+[![Slack Chat](http://pwning.herokuapp.com/badge.svg)](https://pwning.herokuapp.com/)
 
 CodeReason is a semantic binary code analysis framework and toolset. The tool RopTool discovers ROP gadgets in ARM, X86 and X86-64 binaries by providing pre- and post-conditions for the CPU and memory context using Lua scripts. Examples of other tools that can be created with CodeReason are available in the tools/ directory.
 
@@ -8,28 +9,24 @@ CodeReason is a semantic binary code analysis framework and toolset. The tool Ro
 CodeReason builds on Linux and OS X. Windows are builds currently broken. [Help us fix them](https://github.com/trailofbits/codereason/issues/32)!
 
 ### Requirements
-* [capstone](http://www.capstone-engine.org/) for printing disassembly
+* [LibVEX](https://github.com/trailofbits/libvex) with custom patches to support static analysis
 * [gtest](https://code.google.com/p/googletest/) for unit tests
 * [lua](http://www.lua.org/home.html) for the user interface
 * [protobuf](https://developers.google.com/protocol-buffers/)
 * [boost](http://www.boost.org/)
+* [capstone](http://www.capstone-engine.org/) for pretty printing disassembly
 
 ### Ubuntu
 ```
 sudo ./install_deps.sh
-cd capstone-3.0.3 && ./setup_capstone.sh && cd ..
-cd libs/pe-parse && cmake . && make && cd ../../
-cd vexTRUNK && make && cd ..
-mkdir build && cd build && cmake .. && make -j8
+./make.sh
 ```
 
 ### OS X
 ```
-brew update && brew install cmake boost protobuf
-cd capstone-3.0.3 && ./setup_capstone.sh && cd ..
-cd libs/pe-parse && cmake . && make && cd ../../
-cd vexTRUNK && make && cd ..
-mkdir build && cd build && cmake .. && make -j8
+brew update && brew install cmake boost protobuf git
+./install_vex.sh
+./make.sh
 ```
 
 Several helper scripts are available: `install_deps.sh` installs Ubuntu dependencies, `make.sh` creates a full build, `recompile.sh` recompiles CodeReason, and `package.sh` creates a debian package. See our [Travis-CI configuration](https://github.com/trailofbits/codereason/blob/master/.travis.yml) for more details about building.
@@ -52,7 +49,7 @@ RopTool takes in a binary and a Lua script as input and will output results to s
 
 Example usage:
 ```
-./build/bin/RopTool -f ../putty.exe -c scripts/call_reg.lua
+./build/bin/RopTool -a x64 -c ./scripts/x64/call_reg.lua -f ./tests/ELF/ls_x64
 ```
 
 ### BlockExtract
@@ -60,7 +57,7 @@ BlockExtract reads in a binary and outputs a database file containing block info
 
 Example usage:
 ```
-./BlockExtract -f ../../tests/ELF/ls_x64 -a x64  --blocks-out ./blockdbfile
+./build/bin/BlockExtract -f ./tests/ELF/ls_x64 -a x64  --blocks-out ./blockdbfile
 ```
 
 ### BlockReader
@@ -68,7 +65,7 @@ BlockReader consumes the block database created by BlockExtract. It may be usefu
 
 Example usage:
 ```
-./BlockReader -a ./blockdbfile
+./build/bin/BlockReader -d ./blockdbfile
 ```
 
 ### ImgTool
@@ -76,15 +73,31 @@ ImgTool is a test program that prints information about executable code sections
 
 Example usage:
 ```
-./ImgTool -a x64 -f ../../tests/EXE/x64_calc.exe
+./build/bin/ImgTool -a x64 -f ./tests/MachO/ls_FAT_x86_x64
 ```
 Example output:
 ```
-In file ../../tests/EXE/x64_calc.exe
-found 1 +X sections
+In file ./tests/MachO/ls_FAT_x86_x64
+found 6 +X sections
 ------------------
-Section of arch X86
-beginning at 0x401000 of size 0x5ae00
+Section of arch AMD64
+beginning at 0x1778 of size 0x3635
+------------------
+Section of arch AMD64
+beginning at 0x4dae of size 0x1bc
+------------------
+Section of arch AMD64
+beginning at 0x4f6c of size 0x2f4
+------------------
+Section of arch AMD64
+beginning at 0x5260 of size 0x568
+------------------
+Section of arch AMD64
+beginning at 0x57c8 of size 0x a0
+------------------
+Section of arch AMD64
+beginning at 0x5868 of size 0x798
+------------------
 ```
 
 ## References
